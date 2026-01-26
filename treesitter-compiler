@@ -1,0 +1,182 @@
+#!/usr/bin/env zsh
+# treesitter-compiler: Compiles and installs tree-sitter grammars compatible with installed version of Emacs on macOS
+# Usage: treesitter-compiler
+# Copyright (c) 2026 Rohan Jaguste (connect@rohanjaguste.com)
+# MIT License
+# Version 0.1.0
+
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+SRC_DIR="$SCRIPT_DIR/tree-sitter-src"
+GRAMMAR_DIR="$HOME/.emacs.d/tree-sitter"
+
+mkdir -p "$GRAMMAR_DIR" "$SRC_DIR"
+
+# Language grammar repositories with optional source subdirectory
+declare -A grammars=(
+    ["python"]="https://github.com/tree-sitter/tree-sitter-python"
+    ["javascript"]="https://github.com/tree-sitter/tree-sitter-javascript"
+    ["html"]="https://github.com/tree-sitter/tree-sitter-html"
+    ["css"]="https://github.com/tree-sitter/tree-sitter-css"
+    ["json"]="https://github.com/tree-sitter/tree-sitter-json"
+    ["bash"]="https://github.com/tree-sitter/tree-sitter-bash"
+    ["php"]="https://github.com/tree-sitter/tree-sitter-php"
+    ["elisp"]="https://github.com/Wilfred/tree-sitter-elisp"
+    ["ruby"]="https://github.com/tree-sitter/tree-sitter-ruby"
+    ["markdown"]="https://github.com/tree-sitter-grammars/tree-sitter-markdown"
+    ["zsh"]="https://github.com/tree-sitter-grammars/tree-sitter-zsh"
+    ["scss"]="https://github.com/tree-sitter-grammars/tree-sitter-scss"
+    ["csv"]="https://github.com/tree-sitter-grammars/tree-sitter-csv"
+    ["toml"]="https://github.com/tree-sitter-grammars/tree-sitter-toml"
+    ["make"]="https://github.com/tree-sitter-grammars/tree-sitter-make"
+)
+
+# Set non-standard source paths. Check git repos for confirmation.
+# Path to parse.c and scanner.c
+declare -A source_paths=(
+    ["typescript"]="typescript/src"
+    ["markdown"]="tree-sitter-markdown/src"
+    ["php"]="php/src"
+    ["csv"]="csv/src"
+)
+
+prompt_user() {
+    local prompt="$1"
+    local reply
+    echo -n "$prompt"
+    read -r reply
+    echo
+    [[ $reply =~ ^[Yy]$ ]]
+}
+
+check_existing_grammars() {
+    local existing=("$GRAMMAR_DIR"/libtree-sitter-*.dylib(N))
+
+    if (( ${#existing[@]} > 0 )); then
+        echo "Found ${#existing[@]} existing grammar(s) in $GRAMMAR_DIR:"
+        for grammar in "${existing[@]}"; do
+            echo "  $(basename "$grammar")"
+        done
+        echo
+
+        if prompt_user "Overwrite existing grammars? [y/N]: "; then
+            echo "Overwriting existing grammars..."
+            rm -f "$GRAMMAR_DIR"/libtree-sitter-*.dylib
+            OVERWRITE_ALL=true
+        else
+            echo "Keeping existing grammars. Will skip already compiled grammars."
+            OVERWRITE_ALL=false
+        fi
+    else
+        OVERWRITE_ALL=true
+    fi
+}
+
+check_existing_sources() {
+    local existing=("$SRC_DIR"/*(/N))
+
+    if (( ${#existing[@]} > 0 )); then
+        echo "Found ${#existing[@]} existing grammar source(s) in $SRC_DIR:"
+        for src in "${existing[@]}"; do
+            echo "  $(basename "$src")"
+        done
+        echo
+
+        if prompt_user "Update existing sources (git pull)? [y/N]: "; then
+            UPDATE_SOURCES=true
+        else
+            UPDATE_SOURCES=false
+        fi
+    else
+        UPDATE_SOURCES=false
+    fi
+}
+
+get_source_dir() {
+    local lang="$1"
+    local base_dir="$SRC_DIR/$lang"
+
+    # Check special cases first
+    if [[ -n "${source_paths[$lang]}" ]]; then
+        echo "$base_dir/${source_paths[$lang]}"
+        return
+    fi
+
+    # Check for nested language/language/src pattern
+    if [[ -d "$base_dir/$lang/src" ]]; then
+        echo "$base_dir/$lang/src"
+        return
+    fi
+
+    # Check for src directory
+    if [[ -d "$base_dir/src" ]]; then
+        echo "$base_dir/src"
+        return
+    fi
+
+    # Fallback to base directory
+    echo "$base_dir"
+}
+
+compile_grammar() {
+    local lang="$1"
+    local src_dir="$2"
+
+    if [[ ! -d "$src_dir" ]]; then
+        echo "  Error: source directory not found at $src_dir"
+        return 1
+    fi
+
+    cd "$src_dir" || return 1
+
+    if [[ ! -f parser.c ]]; then
+        echo "  Error: parser.c not found in $src_dir"
+        return 1
+    fi
+
+    echo "  Compiling $lang..."
+    cc -fPIC -c -I. parser.c || return 1
+    cc -fPIC -c -I. scanner.c 2>/dev/null || true
+    cc -shared *.o -o "$GRAMMAR_DIR/libtree-sitter-${lang}.dylib" || return 1
+}
+
+# Main workflow
+check_existing_grammars
+check_existing_sources
+
+for lang in ${(k)grammars}; do
+    repo="${grammars[$lang]}"
+    lang_dir="$SRC_DIR/$lang"
+
+    # Skip if grammar already compiled and not overwriting
+    if [[ "$OVERWRITE_ALL" == "false" ]] && [[ -f "$GRAMMAR_DIR/libtree-sitter-${lang}.dylib" ]]; then
+        echo "Skipping $lang (already installed)"
+        continue
+    fi
+
+    echo "Processing $lang..."
+
+    # Clone or update repository
+    if [[ -d "$lang_dir" ]]; then
+        if [[ "$UPDATE_SOURCES" == "true" ]]; then
+            echo "  Updating $lang sources..."
+            (cd "$lang_dir" && git pull) || echo "  Warning: git pull failed for $lang"
+        else
+            echo "  Using existing $lang sources"
+        fi
+    else
+        echo "  Cloning $lang..."
+        git clone "$repo" "$lang_dir" || { echo "  Error: failed to clone $lang"; continue; }
+    fi
+
+    src_dir=$(get_source_dir "$lang")
+
+    if compile_grammar "$lang" "$src_dir"; then
+        echo "$lang installed"
+    else
+        echo "$lang failed to compile!"
+    fi
+done
+
+echo
+echo "All grammars processed. Installed to $GRAMMAR_DIR"
+echo "Sources located in $SRC_DIR"
