@@ -20,6 +20,7 @@ Edit the following in the script to add or remove grammars as needed. Note that 
 declare -A grammars=(
     ["python"]="https://github.com/tree-sitter/tree-sitter-python"
     ["javascript"]="https://github.com/tree-sitter/tree-sitter-javascript"
+    ["jsdoc"]="https://github.com/tree-sitter/tree-sitter-jsdoc"
     ["html"]="https://github.com/tree-sitter/tree-sitter-html"
     ["css"]="https://github.com/tree-sitter/tree-sitter-css"
     ["json"]="https://github.com/tree-sitter/tree-sitter-json"
@@ -28,6 +29,7 @@ declare -A grammars=(
     ["elisp"]="https://github.com/Wilfred/tree-sitter-elisp"
     ["ruby"]="https://github.com/tree-sitter/tree-sitter-ruby"
     ["markdown"]="https://github.com/tree-sitter-grammars/tree-sitter-markdown"
+    ["markdown-inline"]="https://github.com/tree-sitter-grammars/tree-sitter-markdown"
     ["zsh"]="https://github.com/tree-sitter-grammars/tree-sitter-zsh"
     ["scss"]="https://github.com/tree-sitter-grammars/tree-sitter-scss"
     ["csv"]="https://github.com/tree-sitter-grammars/tree-sitter-csv"

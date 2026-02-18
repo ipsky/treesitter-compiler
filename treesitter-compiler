@@ -15,6 +15,7 @@ mkdir -p "$GRAMMAR_DIR" "$SRC_DIR"
 declare -A grammars=(
     ["python"]="https://github.com/tree-sitter/tree-sitter-python"
     ["javascript"]="https://github.com/tree-sitter/tree-sitter-javascript"
+    ["jsdoc"]="https://github.com/tree-sitter/tree-sitter-jsdoc"
     ["html"]="https://github.com/tree-sitter/tree-sitter-html"
     ["css"]="https://github.com/tree-sitter/tree-sitter-css"
     ["json"]="https://github.com/tree-sitter/tree-sitter-json"
@@ -23,6 +24,7 @@ declare -A grammars=(
     ["elisp"]="https://github.com/Wilfred/tree-sitter-elisp"
     ["ruby"]="https://github.com/tree-sitter/tree-sitter-ruby"
     ["markdown"]="https://github.com/tree-sitter-grammars/tree-sitter-markdown"
+    ["markdown-inline"]="https://github.com/tree-sitter-grammars/tree-sitter-markdown"
     ["zsh"]="https://github.com/tree-sitter-grammars/tree-sitter-zsh"
     ["scss"]="https://github.com/tree-sitter-grammars/tree-sitter-scss"
     ["csv"]="https://github.com/tree-sitter-grammars/tree-sitter-csv"
@@ -35,6 +37,7 @@ declare -A grammars=(
 declare -A source_paths=(
     ["typescript"]="typescript/src"
     ["markdown"]="tree-sitter-markdown/src"
+    ["markdown-inline"]="tree-sitter-markdown-inline/src"
     ["php"]="php/src"
     ["csv"]="csv/src"
 )
