@@ -19,6 +19,7 @@ Edit the following in the script to add or remove grammars as needed. Note that 
 ``` shell
 declare -A grammars=(
     ["python"]="https://github.com/tree-sitter/tree-sitter-python"
+    ["julia"]="https://github.com/tree-sitter/tree-sitter-julia"
     ["javascript"]="https://github.com/tree-sitter/tree-sitter-javascript"
     ["jsdoc"]="https://github.com/tree-sitter/tree-sitter-jsdoc"
     ["html"]="https://github.com/tree-sitter/tree-sitter-html"
